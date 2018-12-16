@@ -1,5 +1,5 @@
 package pos.domainlayer;
-
+ 
 public class ItemID {
 	String id;
 	// 문자열을 위한 생성

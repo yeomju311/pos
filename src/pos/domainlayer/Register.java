@@ -1,6 +1,5 @@
 package pos.domainlayer;
 
-
 public class Register {
 	private ProductCatalog catalog;
 	private Sale currentSale;

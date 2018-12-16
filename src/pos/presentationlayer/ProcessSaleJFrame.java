@@ -16,7 +16,7 @@ import pos.domainlayer.Register;
 import pos.domainlayer.Sale;
 
 public class ProcessSaleJFrame extends JFrame {
-	
+	 
 	Register register;
 	Sale sale;
 	

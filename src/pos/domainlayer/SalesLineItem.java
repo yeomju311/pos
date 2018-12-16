@@ -1,5 +1,5 @@
 package pos.domainlayer;
-
+ 
 public class SalesLineItem {
 	
 	private int quantity; // 수량

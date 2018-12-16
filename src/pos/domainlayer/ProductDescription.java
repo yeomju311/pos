@@ -1,5 +1,5 @@
 package pos.domainlayer;
-
+ 
 public class ProductDescription {
 	private ItemID id;
 	private Money price;

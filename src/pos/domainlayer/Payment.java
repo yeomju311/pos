@@ -1,5 +1,5 @@
 package pos.domainlayer;
-
+ 
 public class Payment {
 	private Money amount;
 

@@ -7,14 +7,14 @@ public class Main {
 		Store store = new Store();
 		Register register = store.getRegister();
 		
-		Sale sale = register.makeNewSale(); //»õ·Î¿î ÆÇ¸Å ½ÃÀÛ.
+		Sale sale = register.makeNewSale(); //ï¿½ï¿½ï¿½Î¿ï¿½ ï¿½Ç¸ï¿½ ï¿½ï¿½ï¿½ï¿½.
 		
 		register.enterItem(new ItemID(100), 3);
 		register.enterItem(new ItemID(200), 2);
 		
 		register.endSale();
 		
-		System.out.println("Total = " + sale.getTotal()); //Total = pos.domainlayer.Money@7852e922 -> MoneyÅ¬·¡½º¿¡ toString()Ãß°¡.
+		System.out.println("Total = " + sale.getTotal()); //Total = pos.domainlayer.Money@7852e922 -> MoneyÅ¬ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ toString()ï¿½ß°ï¿½.
 		
 		register.makePayment(new Money(10000));
 		
