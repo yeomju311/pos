@@ -6,10 +6,18 @@ public class MainGUI {
 
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
-		Store store = new Store();
-		Register register = store.getRegister();
 		
-		new ProcessSaleJFrame(register);
+		if(args.length == 1) {
+			String dbFileName = args[0];
+			
+			Store store = new Store();
+			Register register = store.getRegister();
+			
+			new ProcessSaleJFrame(register, dbFileName);
+		}
+		else {
+			System.out.println("Wrong Access");
+		}
 	}
 
 }
