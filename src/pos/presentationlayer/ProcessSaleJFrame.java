@@ -19,12 +19,13 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
+import pos.domainlayer.ITaxCalculatorAdapter;
 import pos.domainlayer.ItemID;
 import pos.domainlayer.Money;
+import pos.domainlayer.PropertyListener;
 import pos.domainlayer.Register;
 import pos.domainlayer.Sale;
 import pos.domainlayer.ServicesFactory;
-import pos.domainlayer.tax.*;
 
 public class ProcessSaleJFrame extends JFrame {
 
@@ -364,34 +365,34 @@ public class ProcessSaleJFrame extends JFrame {
 			// TODO Auto-generated method stub
 			if(rb_taxMaster.isSelected()){
 				// TaxMaster
-				System.setProperty("taxcalculator.class.name", "tax.TaxMasterAdapter");
+				System.setProperty("taxcalculator.class.name", "pos.domainlayer.TaxMasterAdapter");
 			}
 			else if(rb_goodAsGoldTaxPro.isSelected()){
 				// GoodAsGoldTaxPro
-				System.setProperty("taxcalculator.class.name", "tax.GoodAsGoldTaxProAdapter");
+				System.setProperty("taxcalculator.class.name", "pos.domainlayer.GoodAsGoldTaxProAdapter");
 			}
 			else { // 아무것도 선택하지 않았을 때
 				
 			}
 			
+			ServicesFactory sf = ServicesFactory.getInstance();
+			ITaxCalculatorAdapter tax = null;
 			try {
-				register.initialize();
+				tax = sf.getTaxCalculatorAdapter();
 			} catch (InstantiationException | IllegalAccessException | ClassNotFoundException e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
 			
-			ITaxCalculatorAdapter taxCalculatorAdapter = null;
-
-			try {
-				taxCalculatorAdapter = ServicesFactory.getInstance().getTaxCalculatorAdapter();
-			} catch (InstantiationException | IllegalAccessException | ClassNotFoundException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			}
+			t_totalTax.setText(String.valueOf(tax.getTaxes(sale).getAmount()));
 			
-			int i = taxCalculatorAdapter.getTaxes(sale).getAmount();
-			t_totalTax.setText(String.valueOf(i));
+			rb_taxMaster.setEnabled(false);
+			rb_goodAsGoldTaxPro.setEnabled(false);
+			b_calculateTax.setEnabled(false);
+			rb_forCus.setEnabled(true);
+			rb_forStore.setEnabled(true);
+			b_applyDiscount.setEnabled(true);
+			
 			ta_status.append("Status: Calculate Tax 버튼이 눌려졌습니다.\n");
 		}
 		

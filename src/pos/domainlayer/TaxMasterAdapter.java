@@ -1,7 +1,4 @@
-package pos.domainlayer.tax;
-
-import pos.domainlayer.Money;
-import pos.domainlayer.Sale;
+package pos.domainlayer;
 
 public class TaxMasterAdapter implements ITaxCalculatorAdapter {
 
