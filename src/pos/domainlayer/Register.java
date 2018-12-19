@@ -1,5 +1,7 @@
 package pos.domainlayer;
 
+import java.util.Set;
+
 public class Register {
 	private ProductCatalog catalog;
 	private Sale currentSale;
@@ -17,6 +19,11 @@ public class Register {
 	{
 		ProductDescription desc = catalog.getProductDescription(id);
 		currentSale.makeLineItem(desc, quantity);
+	}
+	
+	public Set getItemIDtoProductCatalog() {
+		Set set = catalog.getSetItemID();
+		return set;
 	}
 	
 	public Sale makeNewSale()

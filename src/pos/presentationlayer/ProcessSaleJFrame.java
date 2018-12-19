@@ -5,7 +5,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
-import java.sql.*;
+import java.util.Iterator;
+import java.util.Set;
 
 import javax.swing.ButtonGroup;
 import javax.swing.JButton;
@@ -17,19 +18,13 @@ import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
-import javax.swing.ScrollPaneConstants;
 
-import pos.domainlayer.ItemID;
 import pos.domainlayer.Money;
 import pos.domainlayer.Register;
 import pos.domainlayer.Sale;
 
 public class ProcessSaleJFrame extends JFrame {
-	
-	private Connection myConnection;
-	private Statement myStatement;
-	private ResultSet myResultSet;
-	 
+
 	Register register;
 	Sale sale;
 	
@@ -61,7 +56,7 @@ public class ProcessSaleJFrame extends JFrame {
 	
 	JTextField t_balance;
 	
-	JTextArea textArea;
+	JTextArea ta_status;
 	
 	public ProcessSaleJFrame(Register register) {
 		super("POS System (학번 : 20141121 이름 : 최윤주)");
@@ -71,35 +66,7 @@ public class ProcessSaleJFrame extends JFrame {
 		// 화면 구성
 		buildGUI();
 		registerEventHandler();
-		
-		// 화면 구성 후 pack, setVisible
-		this.pack();
-		this.setSize(650, 550);
-		this.setVisible(true);
-		
-		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-	}
-	
-	public ProcessSaleJFrame(Register register, String dbFileName) {
-		super("POS System (학번 : 20141121 이름 : 최윤주)");
-		
-		// db에 연결
-		try {
-			// connect to database
-			myConnection = DriverManager.getConnection("jdbc:ucanaccess://"+ dbFileName);
-			   
-			// create Statement for executing SQL
-			myStatement = myConnection.createStatement();
-			} 
-		catch (SQLException exception) {
-			exception.printStackTrace();
-		}
-		
-		this.register = register;
-		
-		// 화면 구성
-		buildGUI();
-		registerEventHandler();
+		loadProductOnJComboBox();
 		
 		// 화면 구성 후 pack, setVisible
 		this.pack();
@@ -130,7 +97,7 @@ public class ProcessSaleJFrame extends JFrame {
 		t_description = new JTextField(10);
 		t_description.setBounds(135, 100, 110, 30);
 		
-		b_enterItem = new JButton("2. Enter Item()"); 
+		b_enterItem = new JButton("2. Enter Item() (반복)"); 
 		b_enterItem.setBounds(50, 130, 200, 35);
 		
 		JLabel l_currentTotal = new JLabel("Current Total : ");
@@ -186,25 +153,29 @@ public class ProcessSaleJFrame extends JFrame {
 		t_balance = new JTextField(10);
 		t_balance.setBounds(135, 485, 110, 30);
 		
-		textArea = new JTextArea();
-		//textArea.setBounds(300, 10, 300, 500);
+		ta_status = new JTextArea();
 		
-		JScrollPane scroll = new JScrollPane(textArea);
+		JScrollPane scroll = new JScrollPane(ta_status);
 		scroll.setBounds(300, 10, 300, 500);
-		/*
-		JScrollPane scroll = new JScrollPane(textArea,
-				ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS,
-				ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
-				*/
 		
 		cb_itemID.setEnabled(false);
 		t_quantity.setEnabled(false);
+		t_description.setEnabled(false);
 		b_enterItem.setEnabled(false);
+		t_currentTotal.setEnabled(false);
 		b_endSale.setEnabled(false);
-		//t_total.setEnabled(false);
+		rb_taxMaster.setEnabled(false);
+		rb_goodAsGoldTaxPro.setEnabled(false);
+		b_calculateTax.setEnabled(false);
+		t_totalTax.setEnabled(false);
+		rb_forCus.setEnabled(false);
+		rb_forStore.setEnabled(false);
+		b_applyDiscount.setEnabled(false);
+		t_totalDiscount.setEnabled(false);
 		t_amount.setEnabled(false);
 		b_makePayment.setEnabled(false);
 		t_balance.setEnabled(false);
+		ta_status.setEnabled(false);
 		
 		// 구성
 		Container cp = this.getContentPane();
@@ -215,7 +186,7 @@ public class ProcessSaleJFrame extends JFrame {
 		cp.add(l_itemID);
 		cp.add(cb_itemID);
 		cb_itemID.addItem("");
-		loadProduct();
+		
 		// JComboBox 연결
 		cb_itemID.addItemListener(new ItemListener() {
 
@@ -266,7 +237,9 @@ public class ProcessSaleJFrame extends JFrame {
 	}
 	
 	private void itemIDJComboBoxItemStateChanged(ItemEvent e) {
-		if(( e.getStateChange() == ItemEvent.SELECTED ) && ( cb_itemID.getSelectedIndex() != 0 )){
+		// 콤보박스에서 아이템이 클릭되면
+		if((e.getStateChange() == ItemEvent.SELECTED) && (cb_itemID.getSelectedIndex() != 0)){
+			b_enterItem.setEnabled(true);
 			
 		}
 	}
@@ -298,6 +271,8 @@ public class ProcessSaleJFrame extends JFrame {
 		b_makeNewSale.addActionListener(makeNewSale);
 		b_enterItem.addActionListener(enterItemHandler);	
 		b_endSale.addActionListener(endSaleHandler);
+		b_calculateTax.addActionListener(calculateTax);
+		b_applyDiscount.addActionListener(applyDiscount);
 		b_makePayment.addActionListener(makePaymentHandler);
 	}
 	
@@ -306,16 +281,14 @@ public class ProcessSaleJFrame extends JFrame {
 		@Override
 		public void actionPerformed(ActionEvent e) {
 			// TODO Auto-generated method stub
-			//t_total.setText("");
 			t_amount.setText("");
 			t_balance.setText("");
 			
 			cb_itemID.setEnabled(true);
 			t_quantity.setEnabled(true);
-			b_enterItem.setEnabled(true);
 			b_makeNewSale.setEnabled(false);
 			
-			System.out.println("Status: Make New Sale 버튼이 눌려졌습니다.");
+			ta_status.append("Status: Make New Sale 버튼이 눌려졌습니다.\n");
 		}
 		
 	};
@@ -327,12 +300,14 @@ public class ProcessSaleJFrame extends JFrame {
 			//ItemID id = new ItemID(cb_itemID.getText());
 			int q = 0;
 			
-			//int q = Integer.parseInt(t_quantity.getText());
+			// 기능 1. Quantity 입력란 오류 처리
 			try {
 				q = Integer.parseInt(t_quantity.getText());
 			} 
 			catch (NumberFormatException numberFromatException) {
 				JOptionPane.showMessageDialog(null, "please input only number");
+				t_quantity.setText("");
+				t_quantity.requestFocusInWindow();
 			}
 			
 			//register.enterItem(id, q);
@@ -342,7 +317,8 @@ public class ProcessSaleJFrame extends JFrame {
 			
 			b_endSale.setEnabled(true);
 			
-			System.out.println("Status: Enter Item 버튼이 눌려졌습니다.");
+			ta_status.append("Status: Enter Item 버튼이 눌려졌습니다.\n");
+			//System.out.println("Status: Enter Item 버튼이 눌려졌습니다.");
 		}
 	};
 	
@@ -369,6 +345,26 @@ public class ProcessSaleJFrame extends JFrame {
 		}
 	};
 	
+	ActionListener calculateTax = new ActionListener() {
+
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			// TODO Auto-generated method stub
+			
+		}
+		
+	};
+	
+	ActionListener applyDiscount = new ActionListener() {
+
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			// TODO Auto-generated method stub
+			
+		}
+		
+	};
+	
 	ActionListener makePaymentHandler = new ActionListener() {
 
 		@Override
@@ -386,20 +382,13 @@ public class ProcessSaleJFrame extends JFrame {
 		}
 	};
 	
-	
-	// db에서 상품 정보 가져와서 JComboBox에 보여줌
-	private void loadProduct() {
-		try {
-			myResultSet = myStatement.executeQuery("SELECT itemid FROM ProductDescriptions");
-			
-			while(myResultSet.next()) {
-				cb_itemID.addItem(myResultSet.getString("itemid"));
-			}
-			
-			myResultSet.close();
-		}
-		catch(SQLException e) {
-			e.printStackTrace();
+	// ProductDescription에서 상품 정보 가져와서 JComboBox에 보여줌
+	private void loadProductOnJComboBox() {
+		Set set = register.getItemIDtoProductCatalog();
+		Iterator<String> it = set.iterator();
+		while(it.hasNext()){
+			String item = it.next();
+			cb_itemID.addItem(item);
 		}
 	}
 	

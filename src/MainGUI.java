@@ -10,12 +10,16 @@ public class MainGUI {
 		if(args.length == 1) {
 			String dbFileName = args[0];
 			
-			Store store = new Store();
+			Store store = new Store(dbFileName); // new Store() 할 때 DB 넣어야함..!
 			Register register = store.getRegister();
 			
-			new ProcessSaleJFrame(register, dbFileName);
+			new ProcessSaleJFrame(register);
 		}
 		else {
+			Store store = new Store(); 
+			Register register = store.getRegister();
+			
+			new ProcessSaleJFrame(register);
 			System.out.println("Wrong Access");
 		}
 	}
