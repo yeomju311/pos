@@ -19,9 +19,12 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
+import pos.domainlayer.ItemID;
 import pos.domainlayer.Money;
 import pos.domainlayer.Register;
 import pos.domainlayer.Sale;
+import pos.domainlayer.ServicesFactory;
+import pos.domainlayer.tax.*;
 
 public class ProcessSaleJFrame extends JFrame {
 
@@ -241,6 +244,11 @@ public class ProcessSaleJFrame extends JFrame {
 		if((e.getStateChange() == ItemEvent.SELECTED) && (cb_itemID.getSelectedIndex() != 0)){
 			b_enterItem.setEnabled(true);
 			
+			/*
+			 * t_description에 띄울 텍스트
+			String selectedItem = (String)cb_itemID.getSelectedItem();
+			t_description.setText("");
+			*/
 		}
 	}
 	
@@ -281,6 +289,8 @@ public class ProcessSaleJFrame extends JFrame {
 		@Override
 		public void actionPerformed(ActionEvent e) {
 			// TODO Auto-generated method stub
+			sale = register.makeNewSale();
+			
 			t_amount.setText("");
 			t_balance.setText("");
 			
@@ -298,6 +308,8 @@ public class ProcessSaleJFrame extends JFrame {
 		@Override
 		public void actionPerformed(ActionEvent e) {
 			//ItemID id = new ItemID(cb_itemID.getText());
+			//String selectedItem = (String)cb_itemID.getSelectedItem();
+			//ItemID id = new ItemID(selectedItem);
 			int q = 0;
 			
 			// 기능 1. Quantity 입력란 오류 처리
@@ -310,7 +322,7 @@ public class ProcessSaleJFrame extends JFrame {
 				t_quantity.requestFocusInWindow();
 			}
 			
-			//register.enterItem(id, q);
+			register.enterItem(new ItemID((String)cb_itemID.getSelectedItem()), q);
 			
 			//cb_itemID.setText("");
 			t_quantity.setText("");
@@ -318,7 +330,6 @@ public class ProcessSaleJFrame extends JFrame {
 			b_endSale.setEnabled(true);
 			
 			ta_status.append("Status: Enter Item 버튼이 눌려졌습니다.\n");
-			//System.out.println("Status: Enter Item 버튼이 눌려졌습니다.");
 		}
 	};
 	
@@ -329,7 +340,7 @@ public class ProcessSaleJFrame extends JFrame {
 			
 			register.endSale();
 
-			System.out.println(sale.isComplete()); // register -> currentSale -> isComplete 접근 가능
+			//System.out.println(sale.isComplete()); // register -> currentSale -> isComplete 접근 가능
 			
 			//TODO t_total에 총 가격이 뜨도록 한다
 			//t_total.setText(sale.getTotal().toString());
@@ -338,10 +349,11 @@ public class ProcessSaleJFrame extends JFrame {
 			t_quantity.setEnabled(false);
 			b_enterItem.setEnabled(false);
 			b_endSale.setEnabled(false);
-			t_amount.setEnabled(true);
-			b_makePayment.setEnabled(true);
+			rb_taxMaster.setEnabled(true);
+			rb_goodAsGoldTaxPro.setEnabled(true);
+			b_calculateTax.setEnabled(true);
 			
-			System.out.println("Status: End Sale 버튼이 눌려졌습니다.");
+			ta_status.append("Status: End Sale 버튼이 눌려졌습니다.\n");
 		}
 	};
 	
@@ -350,7 +362,37 @@ public class ProcessSaleJFrame extends JFrame {
 		@Override
 		public void actionPerformed(ActionEvent e) {
 			// TODO Auto-generated method stub
+			if(rb_taxMaster.isSelected()){
+				// TaxMaster
+				System.setProperty("taxcalculator.class.name", "tax.TaxMasterAdapter");
+			}
+			else if(rb_goodAsGoldTaxPro.isSelected()){
+				// GoodAsGoldTaxPro
+				System.setProperty("taxcalculator.class.name", "tax.GoodAsGoldTaxProAdapter");
+			}
+			else { // 아무것도 선택하지 않았을 때
+				
+			}
 			
+			try {
+				register.initialize();
+			} catch (InstantiationException | IllegalAccessException | ClassNotFoundException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+			
+			ITaxCalculatorAdapter taxCalculatorAdapter = null;
+
+			try {
+				taxCalculatorAdapter = ServicesFactory.getInstance().getTaxCalculatorAdapter();
+			} catch (InstantiationException | IllegalAccessException | ClassNotFoundException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+			
+			int i = taxCalculatorAdapter.getTaxes(sale).getAmount();
+			t_totalTax.setText(String.valueOf(i));
+			ta_status.append("Status: Calculate Tax 버튼이 눌려졌습니다.\n");
 		}
 		
 	};
@@ -378,7 +420,7 @@ public class ProcessSaleJFrame extends JFrame {
 			b_makePayment.setEnabled(false);
 			b_makeNewSale.setEnabled(true);
 			
-			System.out.println("Status: Make Payment 버튼이 눌려졌습니다.");
+			ta_status.append("Status: Make Payment 버튼이 눌려졌습니다.\n");
 		}
 	};
 	
@@ -391,6 +433,4 @@ public class ProcessSaleJFrame extends JFrame {
 			cb_itemID.addItem(item);
 		}
 	}
-	
-
 }

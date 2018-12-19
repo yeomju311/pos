@@ -54,30 +54,30 @@ public class ProductCatalog {
 	}
 	
 	// db에서 상품 정보를 가져와 저장한다
-		private void retrievePOSInfomation() {
+	private void retrievePOSInfomation() {
+		
+		String itemID, description;
+		int price;
+		
+		ProductDescription desc;
+		
+		try {
+			myResultSet = myStatement.executeQuery("SELECT itemId, price, description FROM ProductDescriptions");
 			
-			String itemID, description;
-			int price;
-			
-			ProductDescription desc;
-			
-			try {
-				myResultSet = myStatement.executeQuery("SELECT itemId, price, description FROM ProductDescriptions");
+			while(myResultSet.next()){
+				itemID = myResultSet.getString("itemId");
+				price = myResultSet.getInt("price");
+				description = myResultSet.getString("description");
 				
-				while(myResultSet.next()){
-					itemID = myResultSet.getString("itemId");
-					price = myResultSet.getInt("price");
-					description = myResultSet.getString("description");
-					
-					desc = new ProductDescription(new ItemID(itemID), new Money(price), description);
-					descriptions.put(itemID, desc);
-				}
-				myResultSet.close();
+				desc = new ProductDescription(new ItemID(itemID), new Money(price), description);
+				descriptions.put(itemID, desc);
 			}
-			catch(SQLException e){
-				e.printStackTrace();
-			}
+			myResultSet.close();
 		}
+		catch(SQLException e){
+			e.printStackTrace();
+		}
+	}
 	
 	public ProductDescription getProductDescription(ItemID id){	
 		return descriptions.get(id.toString()); // 상품 정보 반환
