@@ -13,7 +13,7 @@ public class MainGUI {
 			Store store = new Store(dbFileName); // new Store() 할 때 DB 넣어야함..!
 			Register register = store.getRegister();
 			
-			new ProcessSaleJFrame(register);
+			new ProcessSaleJFrame(register, dbFileName);
 		}
 		else {
 			Store store = new Store(); 

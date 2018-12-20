@@ -5,6 +5,11 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.Iterator;
 import java.util.Set;
 
@@ -19,15 +24,23 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
+import pos.domainlayer.AbsoluteDiscountOverThresholdPricingStrategy;
+import pos.domainlayer.CompositeBestForCustomerPricingStrategy;
+import pos.domainlayer.CompositeBestForStorePricingStrategy;
+import pos.domainlayer.ISalePricingStrategy;
 import pos.domainlayer.ITaxCalculatorAdapter;
 import pos.domainlayer.ItemID;
 import pos.domainlayer.Money;
-import pos.domainlayer.PropertyListener;
+import pos.domainlayer.PercentDiscountPricingStrategy;
 import pos.domainlayer.Register;
 import pos.domainlayer.Sale;
 import pos.domainlayer.ServicesFactory;
 
 public class ProcessSaleJFrame extends JFrame {
+	
+	private Connection myConnection;
+	private Statement myStatement;
+	private ResultSet myResultSet;
 
 	Register register;
 	Sale sale;
@@ -66,6 +79,36 @@ public class ProcessSaleJFrame extends JFrame {
 		super("POS System (학번 : 20141121 이름 : 최윤주)");
 		
 		this.register = register;
+		
+		// 화면 구성
+		buildGUI();
+		registerEventHandler();
+		loadProductOnJComboBox();
+		
+		// 화면 구성 후 pack, setVisible
+		this.pack();
+		this.setSize(650, 550);
+		this.setVisible(true);
+		
+		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+	}
+	
+	public ProcessSaleJFrame(Register register, String dbFileName) {
+		super("POS System (학번 : 20141121 이름 : 최윤주)");
+		
+		this.register = register;
+		
+		// db에 연결
+		try {
+			// connect to database
+			myConnection = DriverManager.getConnection("jdbc:ucanaccess://"+ dbFileName);
+
+			// create Statement for executing SQL
+			myStatement = myConnection.createStatement();
+			} 
+		catch (SQLException exception) {
+			exception.printStackTrace();
+		}
 		
 		// 화면 구성
 		buildGUI();
@@ -244,39 +287,30 @@ public class ProcessSaleJFrame extends JFrame {
 		// 콤보박스에서 아이템이 클릭되면
 		if((e.getStateChange() == ItemEvent.SELECTED) && (cb_itemID.getSelectedIndex() != 0)){
 			b_enterItem.setEnabled(true);
-			
-			/*
-			 * t_description에 띄울 텍스트
-			String selectedItem = (String)cb_itemID.getSelectedItem();
 			t_description.setText("");
-			*/
+			
+			String itemId = (String)cb_itemID.getSelectedItem();
+			String description = null;
+			int price = 0;
+			
+			try{
+				myResultSet = myStatement.executeQuery("SELECT description, price FROM ProductDescriptions WHERE itemId = '"+itemId + "'");
+				
+				if(myResultSet.next()){
+					description = myResultSet.getString("description");
+					price = myResultSet.getInt("price");
+				}
+				myResultSet.close();
+			}
+			catch(SQLException exception){
+				exception.printStackTrace();
+			}
+			
+			ta_status.append("description : "+description+", price : " + price + "\n");
 		}
 	}
 	
 	private void registerEventHandler() {
-		/*
-		b_makeNewSale.addActionListener(new ActionListener() {
-
-			@Override
-			public void actionPerformed(ActionEvent arg0) {
-				
-				sale = register.makeNewSale();
-				
-				//t_total.setText("");
-				t_amount.setText("");
-				t_balance.setText("");
-				
-				cb_itemID.setEnabled(true);
-				t_quantity.setEnabled(true);
-				b_enterItem.setEnabled(true);
-				b_makeNewSale.setEnabled(false);
-				
-				System.out.println("Status: Make New Sale 버튼이 눌려졌습니다.");
-			}
-			
-		});
-		*/
-		
 		b_makeNewSale.addActionListener(makeNewSale);
 		b_enterItem.addActionListener(enterItemHandler);	
 		b_endSale.addActionListener(endSaleHandler);
@@ -294,6 +328,8 @@ public class ProcessSaleJFrame extends JFrame {
 			
 			t_amount.setText("");
 			t_balance.setText("");
+			t_totalTax.setText("");
+			t_totalDiscount.setText("");
 			
 			cb_itemID.setEnabled(true);
 			t_quantity.setEnabled(true);
@@ -308,9 +344,6 @@ public class ProcessSaleJFrame extends JFrame {
 
 		@Override
 		public void actionPerformed(ActionEvent e) {
-			//ItemID id = new ItemID(cb_itemID.getText());
-			//String selectedItem = (String)cb_itemID.getSelectedItem();
-			//ItemID id = new ItemID(selectedItem);
 			int q = 0;
 			
 			// 기능 1. Quantity 입력란 오류 처리
@@ -325,7 +358,24 @@ public class ProcessSaleJFrame extends JFrame {
 			
 			register.enterItem(new ItemID((String)cb_itemID.getSelectedItem()), q);
 			
-			//cb_itemID.setText("");
+			String itemId = (String)cb_itemID.getSelectedItem();
+			String description = null;
+			
+			try{
+				myResultSet = myStatement.executeQuery("SELECT description FROM ProductDescriptions WHERE itemId = '"+itemId + "'");
+				
+				if(myResultSet.next()){
+					description = myResultSet.getString("description");
+				}
+				myResultSet.close();
+			}
+			catch(SQLException exception){
+				exception.printStackTrace();
+			}
+			
+			t_description.setText(description);
+			
+			cb_itemID.setSelectedIndex(0);
 			t_quantity.setText("");
 			
 			b_endSale.setEnabled(true);
@@ -340,8 +390,6 @@ public class ProcessSaleJFrame extends JFrame {
 		public void actionPerformed(ActionEvent e) {
 			
 			register.endSale();
-
-			//System.out.println(sale.isComplete()); // register -> currentSale -> isComplete 접근 가능
 			
 			//TODO t_total에 총 가격이 뜨도록 한다
 			//t_total.setText(sale.getTotal().toString());
@@ -366,25 +414,18 @@ public class ProcessSaleJFrame extends JFrame {
 			if(rb_taxMaster.isSelected()){
 				// TaxMaster
 				System.setProperty("taxcalculator.class.name", "pos.domainlayer.TaxMasterAdapter");
+				ta_status.append("tax률 10%가 적용되었습니다\n");
 			}
 			else if(rb_goodAsGoldTaxPro.isSelected()){
 				// GoodAsGoldTaxPro
 				System.setProperty("taxcalculator.class.name", "pos.domainlayer.GoodAsGoldTaxProAdapter");
+				ta_status.append("tax률 20%가 적용되었습니다\n");
 			}
 			else { // 아무것도 선택하지 않았을 때
 				
 			}
-			
-			ServicesFactory sf = ServicesFactory.getInstance();
-			ITaxCalculatorAdapter tax = null;
-			try {
-				tax = sf.getTaxCalculatorAdapter();
-			} catch (InstantiationException | IllegalAccessException | ClassNotFoundException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			}
-			
-			t_totalTax.setText(String.valueOf(tax.getTaxes(sale).getAmount()));
+
+			t_totalTax.setText(register.getTotalWithTax().toString());
 			
 			rb_taxMaster.setEnabled(false);
 			rb_goodAsGoldTaxPro.setEnabled(false);
@@ -404,6 +445,35 @@ public class ProcessSaleJFrame extends JFrame {
 		public void actionPerformed(ActionEvent e) {
 			// TODO Auto-generated method stub
 			
+			//ISalePricingStrategy pricingStrategy = null;
+			
+			if(rb_forCus.isSelected()){
+				// BestForCustomer
+				sale.pricingStrategy = new CompositeBestForCustomerPricingStrategy();
+			}
+			else if(rb_forStore.isSelected()){
+				// BestForStore
+				sale.pricingStrategy = new CompositeBestForStorePricingStrategy();
+			}
+			else { // 아무것도 선택하지 않았을 때
+				
+			}
+			
+			// 여기서 add를 쓰려면 인터페이스에 add 메소드 선언되어있어야함
+			//sale.pricingStrategy.add(new AbsoluteDiscountOverThresholdPricingStrategy());
+			//sale.pricingStrategy.add(new AbsoluteDiscountOverThresholdPricingStrategy());
+			//sale.pricingStrategy.add(new PercentDiscountPricingStrategy());
+			
+			t_totalDiscount.setText(String.valueOf(sale.pricingStrategy.getTotal(sale).getAmount()));
+			//t_totalDiscount.setText(String.valueOf(pricingStrategy.getTotal(sale).getAmount()));
+			
+			rb_forCus.setEnabled(false);
+			rb_forStore.setEnabled(false);
+			b_applyDiscount.setEnabled(false);
+			t_amount.setEnabled(true);
+			b_makePayment.setEnabled(true);
+			
+			ta_status.append("Status: Apply Discount 버튼이 눌려졌습니다.\n");
 		}
 		
 	};
@@ -412,7 +482,17 @@ public class ProcessSaleJFrame extends JFrame {
 
 		@Override
 		public void actionPerformed(ActionEvent e) {
-			int amount = Integer.parseInt(t_amount.getText());
+			int amount = 0;
+			
+			// 기능 1. Quantity 입력란 오류 처리
+			try {
+				amount = Integer.parseInt(t_amount.getText());
+			} 
+			catch (NumberFormatException numberFromatException) {
+				JOptionPane.showMessageDialog(null, "please input only number");
+				t_amount.setText("");
+				t_amount.requestFocusInWindow();
+			}
 			
 			sale.makePayment(new Money(amount));
 			t_balance.setText(sale.getBalance().toString());

@@ -5,6 +5,7 @@ import java.util.Set;
 public class Register {
 	private ProductCatalog catalog;
 	private Sale currentSale;
+	private ITaxCalculatorAdapter taxCalculatorAdapter;
 	
 	public Register(ProductCatalog catalog){ // 변수 가시성을 유지
 		this.catalog = catalog;
@@ -30,6 +31,19 @@ public class Register {
 	{
 		currentSale = new Sale();
 		return currentSale;
+	}
+	
+	// tax 계산
+	public Money getTotalWithTax(){
+		Money totalWithTax = new Money();
+		try {
+			taxCalculatorAdapter = ServicesFactory.getInstance().getTaxCalculatorAdapter();
+			totalWithTax = taxCalculatorAdapter.getTaxes(currentSale);
+		} catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
+			e.printStackTrace();
+		}
+		currentSale.setTotalWithTax(totalWithTax);
+		return totalWithTax;
 	}
 	
 	public void makePayment(Money cashTendered) //System operation.
