@@ -12,12 +12,13 @@ public class Sale {
 	private boolean isComplete = false;
 	private Payment payment;
 	private Money total;
+	private List<PropertyListener> propertylisteners = new ArrayList<PropertyListener>();
 	
 	// strategy
 	public CompositePricingStrategy pricingStrategy = null;
 	
 	// observer
-	List<PropertyListener> propertyListeners = new ArrayList();
+	//List<PropertyListener> propertyListeners = new ArrayList();
 	
 	public Money getBalance()	{ // 잔돈을 거슬러주기 위한 잔액 계산
 		return payment.getAmount().minus(getTotal());
@@ -44,7 +45,7 @@ public class Sale {
 			subtotal = lineItem.getSubtotal(); // 부분 합
 			total.add(subtotal); 
 		}
-		
+		publishPropertyEvent("sale.total", total);
 		return total;
 		/*
 		if(pricingStrategy == null){
@@ -75,16 +76,17 @@ public class Sale {
 	
 	// observer 패턴
 	public void addPropertyListener(PropertyListener lis){
-		propertyListeners.add(lis);
+		propertylisteners.add(lis);
 	}
 	
-	/*
-	public void publishPropertyEvent(String name, String value){
-		for each PropertyListener pl in propertyListeners{
+	public void publishPropertyEvent(String name, Money value){
+		for (PropertyListener pl : propertylisteners){
 			pl.onPropertyEvent(this, name, value);
-		}	
+		}
 	}
-	*/
 	
-	
+	public void setTotal(Money newTotal){
+		this.total = newTotal;
+		publishPropertyEvent("sale.total", newTotal);
+	}
 }

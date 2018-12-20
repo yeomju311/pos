@@ -32,11 +32,12 @@ import pos.domainlayer.ITaxCalculatorAdapter;
 import pos.domainlayer.ItemID;
 import pos.domainlayer.Money;
 import pos.domainlayer.PercentDiscountPricingStrategy;
+import pos.domainlayer.PropertyListener;
 import pos.domainlayer.Register;
 import pos.domainlayer.Sale;
 import pos.domainlayer.ServicesFactory;
 
-public class ProcessSaleJFrame extends JFrame {
+public class ProcessSaleJFrame extends JFrame implements PropertyListener{
 	
 	private Connection myConnection;
 	private Statement myStatement;
@@ -75,6 +76,7 @@ public class ProcessSaleJFrame extends JFrame {
 	
 	JTextArea ta_status;
 	
+	/*
 	public ProcessSaleJFrame(Register register) {
 		super("POS System (학번 : 20141121 이름 : 최윤주)");
 		
@@ -92,6 +94,7 @@ public class ProcessSaleJFrame extends JFrame {
 		
 		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 	}
+	*/
 	
 	public ProcessSaleJFrame(Register register, String dbFileName) {
 		super("POS System (학번 : 20141121 이름 : 최윤주)");
@@ -112,7 +115,7 @@ public class ProcessSaleJFrame extends JFrame {
 		
 		// 화면 구성
 		buildGUI();
-		registerEventHandler();
+		registerEventHandler(this);
 		loadProductOnJComboBox();
 		
 		// 화면 구성 후 pack, setVisible
@@ -310,8 +313,32 @@ public class ProcessSaleJFrame extends JFrame {
 		}
 	}
 	
-	private void registerEventHandler() {
-		b_makeNewSale.addActionListener(makeNewSale);
+	private void registerEventHandler(PropertyListener pl) {
+		
+		b_makeNewSale.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				
+				sale = register.makeNewSale();
+				sale.addPropertyListener(pl);
+				
+				t_amount.setText("");
+				t_balance.setText("");
+				t_totalTax.setText("");
+				t_totalDiscount.setText("");
+				
+				cb_itemID.setEnabled(true);
+				t_quantity.setEnabled(true);
+				b_makeNewSale.setEnabled(false);
+				
+				ta_status.append("Status: Make New Sale 버튼이 눌려졌습니다.\n");
+			}
+			
+		});
+		
+		
+		//b_makeNewSale.addActionListener(makeNewSale);
 		b_enterItem.addActionListener(enterItemHandler);	
 		b_endSale.addActionListener(endSaleHandler);
 		b_calculateTax.addActionListener(calculateTax);
@@ -319,12 +346,14 @@ public class ProcessSaleJFrame extends JFrame {
 		b_makePayment.addActionListener(makePaymentHandler);
 	}
 	
+	/*
 	ActionListener makeNewSale = new ActionListener() {
 
 		@Override
 		public void actionPerformed(ActionEvent e) {
 			// TODO Auto-generated method stub
 			sale = register.makeNewSale();
+			sale.addPropertyListener(this);
 			
 			t_amount.setText("");
 			t_balance.setText("");
@@ -339,6 +368,7 @@ public class ProcessSaleJFrame extends JFrame {
 		}
 		
 	};
+	*/
 	
 	ActionListener enterItemHandler = new ActionListener() {
 
@@ -379,6 +409,8 @@ public class ProcessSaleJFrame extends JFrame {
 			t_quantity.setText("");
 			
 			b_endSale.setEnabled(true);
+			
+			sale.setTotal(sale.getTotal());
 			
 			ta_status.append("Status: Enter Item 버튼이 눌려졌습니다.\n");
 		}
@@ -513,5 +545,12 @@ public class ProcessSaleJFrame extends JFrame {
 			String item = it.next();
 			cb_itemID.addItem(item);
 		}
+	}
+
+	@Override
+	public void onPropertyEvent(Sale source, String name, Money value) {
+		// TODO Auto-generated method stub
+		if (name.equals("sale.total"))
+			t_currentTotal.setText(value.toString());
 	}
 }

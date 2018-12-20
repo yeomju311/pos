@@ -16,10 +16,12 @@ public class MainGUI {
 			new ProcessSaleJFrame(register, dbFileName);
 		}
 		else {
+			/*
 			Store store = new Store(); 
 			Register register = store.getRegister();
 			
 			new ProcessSaleJFrame(register);
+			*/
 			System.out.println("Wrong Access");
 		}
 	}
