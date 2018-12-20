@@ -5,7 +5,6 @@ import java.util.Set;
 public class Register {
 	private ProductCatalog catalog;
 	private Sale currentSale;
-	private ITaxCalculatorAdapter taxCalculatorAdapter;
 	
 	public Register(ProductCatalog catalog){ // 변수 가시성을 유지
 		this.catalog = catalog;
@@ -33,17 +32,20 @@ public class Register {
 		return currentSale;
 	}
 	
-	// tax 계산
-	public Money getTotalWithTax(){
-		Money totalWithTax = new Money();
+	// 기능6. 세금 계산 기능 지원
+	public void calculateTax() {
+		ITaxCalculatorAdapter tax = null;
+
 		try {
-			taxCalculatorAdapter = ServicesFactory.getInstance().getTaxCalculatorAdapter();
-			totalWithTax = taxCalculatorAdapter.getTaxes(currentSale);
+			tax = ServicesFactory.getInstance().getTaxCalculatorAdapter();
 		} catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
 			e.printStackTrace();
 		}
-		currentSale.setTotalWithTax(totalWithTax);
-		return totalWithTax;
+		currentSale.setTotalWithTax(tax.getTaxes(currentSale)); // 현재 sale 객체의 total을 tax 적용 후 total로 변경해준다
+	}
+
+	public void applyDiscount() {
+		
 	}
 	
 	public void makePayment(Money cashTendered) //System operation.

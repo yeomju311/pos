@@ -12,6 +12,7 @@ public class Sale {
 	private boolean isComplete = false;
 	private Payment payment;
 	private Money total;
+	// 기능8. 구매 물건이 추가시 현재 합계 갱신 - observer
 	private List<PropertyListener> propertylisteners = new ArrayList<PropertyListener>();
 	
 	// strategy
@@ -46,21 +47,18 @@ public class Sale {
 			total.add(subtotal); 
 		}
 		publishPropertyEvent("sale.total", total);
+		
 		return total;
-		/*
-		if(pricingStrategy == null){
-			return total;
-		}
-		else {
-			pricingStrategy.add(new AbsoluteDiscountOverThresholdPricingStrategy());
-			pricingStrategy.add(new PercentDiscountPricingStrategy());
-			return pricingStrategy.getTotal(this);
-		}
-		*/
 	}
 	
-	public void setTotalWithTax(Money total){
+	// 기능6. 세금 계산 기능 지원
+	// 현재 sale 객체의 total을 tax 적용된 total로 변경해준다.
+	public void setTotalWithTax(Money total) {
 		this.total = total;
+	}
+	
+	public Money getTotalWithTax() {
+		return total;
 	}
 	
 	// strategy

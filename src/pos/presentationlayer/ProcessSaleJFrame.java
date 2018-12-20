@@ -287,11 +287,12 @@ public class ProcessSaleJFrame extends JFrame implements PropertyListener{
 	}
 	
 	private void itemIDJComboBoxItemStateChanged(ItemEvent e) {
-		// 콤보박스에서 아이템이 클릭되면
+		// 콤보박스에서 아이템이 클릭되고 && 선택된 인덱스가 0이 아니면
 		if((e.getStateChange() == ItemEvent.SELECTED) && (cb_itemID.getSelectedIndex() != 0)){
+			// enterItem 버튼 활성화
 			b_enterItem.setEnabled(true);
-			t_description.setText("");
 			
+			// ta_status에 상품 정보 띄움
 			String itemId = (String)cb_itemID.getSelectedItem();
 			String description = null;
 			int price = 0;
@@ -321,7 +322,7 @@ public class ProcessSaleJFrame extends JFrame implements PropertyListener{
 			public void actionPerformed(ActionEvent arg0) {
 				
 				sale = register.makeNewSale();
-				sale.addPropertyListener(pl);
+				sale.addPropertyListener(pl); // 기능8. 구매 물건이 추가시 현재 합계 갱신
 				
 				t_amount.setText("");
 				t_balance.setText("");
@@ -337,48 +338,24 @@ public class ProcessSaleJFrame extends JFrame implements PropertyListener{
 			
 		});
 		
-		
-		//b_makeNewSale.addActionListener(makeNewSale);
 		b_enterItem.addActionListener(enterItemHandler);	
 		b_endSale.addActionListener(endSaleHandler);
 		b_calculateTax.addActionListener(calculateTax);
 		b_applyDiscount.addActionListener(applyDiscount);
 		b_makePayment.addActionListener(makePaymentHandler);
 	}
-	
-	/*
-	ActionListener makeNewSale = new ActionListener() {
 
-		@Override
-		public void actionPerformed(ActionEvent e) {
-			// TODO Auto-generated method stub
-			sale = register.makeNewSale();
-			sale.addPropertyListener(this);
-			
-			t_amount.setText("");
-			t_balance.setText("");
-			t_totalTax.setText("");
-			t_totalDiscount.setText("");
-			
-			cb_itemID.setEnabled(true);
-			t_quantity.setEnabled(true);
-			b_makeNewSale.setEnabled(false);
-			
-			ta_status.append("Status: Make New Sale 버튼이 눌려졌습니다.\n");
-		}
-		
-	};
-	*/
-	
 	ActionListener enterItemHandler = new ActionListener() {
 
 		@Override
 		public void actionPerformed(ActionEvent e) {
+			
 			int q = 0;
 			
 			// 기능 1. Quantity 입력란 오류 처리
 			try {
 				q = Integer.parseInt(t_quantity.getText());
+				
 			} 
 			catch (NumberFormatException numberFromatException) {
 				JOptionPane.showMessageDialog(null, "please input only number");
@@ -386,8 +363,10 @@ public class ProcessSaleJFrame extends JFrame implements PropertyListener{
 				t_quantity.requestFocusInWindow();
 			}
 			
+			// register
 			register.enterItem(new ItemID((String)cb_itemID.getSelectedItem()), q);
 			
+			// t_description에 상품 정보 띄움
 			String itemId = (String)cb_itemID.getSelectedItem();
 			String description = null;
 			
@@ -405,11 +384,12 @@ public class ProcessSaleJFrame extends JFrame implements PropertyListener{
 			
 			t_description.setText(description);
 			
-			cb_itemID.setSelectedIndex(0);
 			t_quantity.setText("");
+			cb_itemID.setSelectedIndex(0);
 			
 			b_endSale.setEnabled(true);
 			
+			// 기능8. 구매 물건이 추가시 현재 합계 갱신 - observer
 			sale.setTotal(sale.getTotal());
 			
 			ta_status.append("Status: Enter Item 버튼이 눌려졌습니다.\n");
@@ -421,10 +401,8 @@ public class ProcessSaleJFrame extends JFrame implements PropertyListener{
 		@Override
 		public void actionPerformed(ActionEvent e) {
 			
+			// register
 			register.endSale();
-			
-			//TODO t_total에 총 가격이 뜨도록 한다
-			//t_total.setText(sale.getTotal().toString());
 			
 			cb_itemID.setEnabled(false);
 			t_quantity.setEnabled(false);
@@ -442,7 +420,8 @@ public class ProcessSaleJFrame extends JFrame implements PropertyListener{
 
 		@Override
 		public void actionPerformed(ActionEvent e) {
-			// TODO Auto-generated method stub
+
+			// 라디오 버튼이 어떤 것이 선택되었느냐에 따라 tax률이 다르게 매겨짐
 			if(rb_taxMaster.isSelected()){
 				// TaxMaster
 				System.setProperty("taxcalculator.class.name", "pos.domainlayer.TaxMasterAdapter");
@@ -456,9 +435,11 @@ public class ProcessSaleJFrame extends JFrame implements PropertyListener{
 			else { // 아무것도 선택하지 않았을 때
 				
 			}
-
-			t_totalTax.setText(register.getTotalWithTax().toString());
 			
+			// register
+			register.calculateTax();
+			t_totalTax.setText(sale.getTotalWithTax().toString());
+
 			rb_taxMaster.setEnabled(false);
 			rb_goodAsGoldTaxPro.setEnabled(false);
 			b_calculateTax.setEnabled(false);
