@@ -473,8 +473,9 @@ public class ProcessSaleJFrame extends JFrame implements PropertyListener{
 				
 			}
 			
-			t_totalDiscount.setText(sale.getCompositePricingStrategy().getTotal(sale).toString());
-
+			//t_totalDiscount.setText(sale.getCompositePricingStrategy().getTotal(sale).toString());
+			t_totalDiscount.setText(sale.getAfterDiscountTotal().toString());
+			
 			rb_forCus.setEnabled(false);
 			rb_forStore.setEnabled(false);
 			b_applyDiscount.setEnabled(false);

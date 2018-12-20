@@ -15,7 +15,7 @@ public class CompositeBestForStorePricingStrategy extends CompositePricingStrate
 			
 			Money total = strategy.getTotal(sale);
 			
-			highestTotal = total.min(highestTotal);
+			highestTotal = total.max(highestTotal);
 		}
 		return highestTotal;
 	}	

@@ -12,15 +12,13 @@ public class Sale {
 	private boolean isComplete = false;
 	private Payment payment;
 	private Money total;
+	// 기능7. 다양한 가격 결정 정책 지원
 	private CompositePricingStrategy compositePricingStrategy;
 	// 기능8. 구매 물건이 추가시 현재 합계 갱신 - observer
 	private List<PropertyListener> propertylisteners = new ArrayList<PropertyListener>();
 	
-	// observer
-	//List<PropertyListener> propertyListeners = new ArrayList();
-	
 	public Money getBalance()	{ // 잔돈을 거슬러주기 위한 잔액 계산
-		return payment.getAmount().minus(getTotal());
+		return payment.getAmount().minus(total);
 	}
 	
 	public void becomeComplete(){ 
@@ -75,10 +73,16 @@ public class Sale {
 	}
 	
 	// 기능7. strategy
-	public Money getPreDiscountTotal() {
-		Money preTotal = new Money();
-		preTotal = getTotal();
-		return preTotal;
+	public Money getPreDiscountTotal() { // 세금 정책이 반영되어야함
+		return getTotalWithTax();
+	}
+	
+	public void setAfterDiscocuntTotal(Money total) {
+		this.total = total;
+	}
+	
+	public Money getAfterDiscountTotal() {
+		return total;
 	}
 	
 	// observer 패턴

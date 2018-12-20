@@ -10,13 +10,7 @@ public class AbsoluteDiscountOverThresholdPricingStrategy implements ISalePricin
 	public Money getTotal(Sale s){
 		
 		this.s = s;
-		/*
-		double total = (double)s.getTotal().getAmount();
-		if(total > 20000.0){
-			total *= 0.8;
-		}
-		return new Money((int)total);
-		*/
+
 		Money pdt = s.getPreDiscountTotal();
 		
 		if(pdt.getAmount() < threshold.getAmount())

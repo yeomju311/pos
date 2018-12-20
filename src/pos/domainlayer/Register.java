@@ -50,6 +50,9 @@ public class Register {
 		
 		currentSale.getCompositePricingStrategy().add(new PercentDiscountPricingStrategy());
 		currentSale.getCompositePricingStrategy().add(new AbsoluteDiscountOverThresholdPricingStrategy());
+		
+		// 추가
+		currentSale.setAfterDiscocuntTotal(currentSale.getCompositePricingStrategy().getTotal(currentSale));
 	}
 	
 	public void makePayment(Money cashTendered) //System operation.
