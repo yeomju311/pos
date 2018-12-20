@@ -456,30 +456,25 @@ public class ProcessSaleJFrame extends JFrame implements PropertyListener{
 
 		@Override
 		public void actionPerformed(ActionEvent e) {
-			// TODO Auto-generated method stub
 			
 			//ISalePricingStrategy pricingStrategy = null;
 			
 			if(rb_forCus.isSelected()){
 				// BestForCustomer
-				sale.pricingStrategy = new CompositeBestForCustomerPricingStrategy();
+				//sale.compositePricingStrategy = new CompositeBestForCustomerPricingStrategy();
+				register.applyDiscount(new CompositeBestForCustomerPricingStrategy());
 			}
 			else if(rb_forStore.isSelected()){
 				// BestForStore
-				sale.pricingStrategy = new CompositeBestForStorePricingStrategy();
+				//sale.pricingStrategy = new CompositeBestForStorePricingStrategy();
+				register.applyDiscount(new CompositeBestForStorePricingStrategy());
 			}
 			else { // 아무것도 선택하지 않았을 때
 				
 			}
 			
-			// 여기서 add를 쓰려면 인터페이스에 add 메소드 선언되어있어야함
-			//sale.pricingStrategy.add(new AbsoluteDiscountOverThresholdPricingStrategy());
-			//sale.pricingStrategy.add(new AbsoluteDiscountOverThresholdPricingStrategy());
-			//sale.pricingStrategy.add(new PercentDiscountPricingStrategy());
-			
-			t_totalDiscount.setText(String.valueOf(sale.pricingStrategy.getTotal(sale).getAmount()));
-			//t_totalDiscount.setText(String.valueOf(pricingStrategy.getTotal(sale).getAmount()));
-			
+			t_totalDiscount.setText(sale.getCompositePricingStrategy().getTotal(sale).toString());
+
 			rb_forCus.setEnabled(false);
 			rb_forStore.setEnabled(false);
 			b_applyDiscount.setEnabled(false);

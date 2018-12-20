@@ -44,8 +44,12 @@ public class Register {
 		currentSale.setTotalWithTax(tax.getTaxes(currentSale)); // 현재 sale 객체의 total을 tax 적용 후 total로 변경해준다
 	}
 
-	public void applyDiscount() {
+	// 기능7. 다양한 가격 결정 정책 지원
+	public void applyDiscount(CompositePricingStrategy compositePricingStrategy) {
+		currentSale.setCompositePriciingStrategy(compositePricingStrategy);
 		
+		currentSale.getCompositePricingStrategy().add(new PercentDiscountPricingStrategy());
+		currentSale.getCompositePricingStrategy().add(new AbsoluteDiscountOverThresholdPricingStrategy());
 	}
 	
 	public void makePayment(Money cashTendered) //System operation.

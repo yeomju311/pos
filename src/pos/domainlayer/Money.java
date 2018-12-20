@@ -31,4 +31,23 @@ public class Money {
 	public Money minus(Money m) {
 		return new Money(amount - m.getAmount());
 	}
+	
+	public Money min(Money lowestTotal) {
+		if (this.amount <= lowestTotal.getAmount())
+			return this;
+		else if (this.amount > lowestTotal.getAmount())
+			return lowestTotal;
+		else	
+			return null;
+	}
+	
+	public Money max(Money highestTotal) {
+		if (this.amount <= highestTotal.getAmount())
+			return highestTotal;
+		else if (this.amount > highestTotal.getAmount())
+			return this;
+		else 
+			return null;
+	}
+
 }

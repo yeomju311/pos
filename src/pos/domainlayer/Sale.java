@@ -12,11 +12,9 @@ public class Sale {
 	private boolean isComplete = false;
 	private Payment payment;
 	private Money total;
+	private CompositePricingStrategy compositePricingStrategy;
 	// 기능8. 구매 물건이 추가시 현재 합계 갱신 - observer
 	private List<PropertyListener> propertylisteners = new ArrayList<PropertyListener>();
-	
-	// strategy
-	public CompositePricingStrategy pricingStrategy = null;
 	
 	// observer
 	//List<PropertyListener> propertyListeners = new ArrayList();
@@ -51,25 +49,36 @@ public class Sale {
 		return total;
 	}
 	
+	public void makePayment(Money cashTendered) {
+		payment = new Payment(cashTendered);
+	}
+	
 	// 기능6. 세금 계산 기능 지원
 	// 현재 sale 객체의 total을 tax 적용된 total로 변경해준다.
 	public void setTotalWithTax(Money total) {
 		this.total = total;
 	}
 	
+	// 기능 6
 	public Money getTotalWithTax() {
 		return total;
 	}
 	
-	// strategy
+	// 기능7. 다양한 가격 결정 정책 지원
+	public void setCompositePriciingStrategy(CompositePricingStrategy compositePricingStrategy) {
+		this.compositePricingStrategy = compositePricingStrategy;
+	}
+	
+	// 기능 7
+	public CompositePricingStrategy getCompositePricingStrategy() {
+		return compositePricingStrategy;
+	}
+	
+	// 기능7. strategy
 	public Money getPreDiscountTotal() {
 		Money preTotal = new Money();
 		preTotal = getTotal();
 		return preTotal;
-	}
-	
-	public void makePayment(Money cashTendered) {
-		payment = new Payment(cashTendered);
 	}
 	
 	// observer 패턴
@@ -77,12 +86,14 @@ public class Sale {
 		propertylisteners.add(lis);
 	}
 	
+	// observer
 	public void publishPropertyEvent(String name, Money value){
 		for (PropertyListener pl : propertylisteners){
 			pl.onPropertyEvent(this, name, value);
 		}
 	}
 	
+	// observer
 	public void setTotal(Money newTotal){
 		this.total = newTotal;
 		publishPropertyEvent("sale.total", newTotal);
