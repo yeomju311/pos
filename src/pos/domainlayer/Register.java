@@ -21,6 +21,8 @@ public class Register {
 		currentSale.makeLineItem(desc, quantity);
 	}
 	
+	// ProductCatalog에 저장된 ItemID 값들을 가져온다
+	// ProcessSaleJFrame에서 바로 catalog를 접근하는 것이 아니라 register에 접근하여 가져오므로 이 메소드를 만듦
 	public Set getItemIDtoProductCatalog() {
 		Set set = catalog.getSetItemID();
 		return set;
@@ -51,11 +53,10 @@ public class Register {
 		currentSale.getCompositePricingStrategy().add(new PercentDiscountPricingStrategy());
 		currentSale.getCompositePricingStrategy().add(new AbsoluteDiscountOverThresholdPricingStrategy());
 		
-		// 추가
 		currentSale.setAfterDiscocuntTotal(currentSale.getCompositePricingStrategy().getTotal(currentSale));
 	}
 	
-	public void makePayment(Money cashTendered) //System operation.
+	public void makePayment(Money cashTendered) // System operation.
 	{
 		currentSale.makePayment(cashTendered);
 	}

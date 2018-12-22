@@ -11,7 +11,7 @@ public class Sale {
 	private Date date = new Date();
 	private boolean isComplete = false;
 	private Payment payment;
-	private Money total;
+	private Money total; 
 	// 기능7. 다양한 가격 결정 정책 지원
 	private CompositePricingStrategy compositePricingStrategy;
 	// 기능8. 구매 물건이 추가시 현재 합계 갱신 - observer
@@ -72,8 +72,8 @@ public class Sale {
 		return compositePricingStrategy;
 	}
 	
-	// 기능7. strategy
-	public Money getPreDiscountTotal() { // 세금 정책이 반영되어야함
+	// 기능7
+	public Money getPreDiscountTotal() { // 세금 정책이 반영되어 있어야 함
 		return getTotalWithTax();
 	}
 	

@@ -13,6 +13,7 @@ import java.util.Set;
 // 다수의 product description을 카탈로그에 저장하여 관리
 public class ProductCatalog { 
 	
+	// db 연결을 위해 사용
 	private Connection myConnection;
 	private Statement myStatement;
 	private ResultSet myResultSet;
@@ -83,6 +84,7 @@ public class ProductCatalog {
 		return descriptions.get(id.toString()); // 상품 정보 반환
 	}
 	
+	// set 타입으로 저장한 ItemID 값들을 반환한다
 	public Set getSetItemID() {
 		Set<String> SetItemID = descriptions.keySet();
 		return SetItemID;

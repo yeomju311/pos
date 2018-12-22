@@ -37,8 +37,19 @@ import pos.domainlayer.Register;
 import pos.domainlayer.Sale;
 import pos.domainlayer.ServicesFactory;
 
-public class ProcessSaleJFrame extends JFrame implements PropertyListener{
+public class ProcessSaleJFrame extends JFrame implements PropertyListener, ActionListener{
 	
+	// 단계적 활성화용 작업 단계 상수 지정
+	private static final int MAKE_NEW_SALE = 1; 
+	private static final int ENTER_ITEM = 2;
+	private static final int END_SALE = 3;
+	private static final int CALCULATE_TAX = 4;
+	private static final int APPLY_DISCOUNT = 5;
+	private static final int MAKE_PAYMENT = 6;
+	private int action;
+	private boolean flag = true; // try catch 시 사용
+	
+	// db 연결
 	private Connection myConnection;
 	private Statement myStatement;
 	private ResultSet myResultSet;
@@ -75,26 +86,6 @@ public class ProcessSaleJFrame extends JFrame implements PropertyListener{
 	JTextField t_balance;
 	
 	JTextArea ta_status;
-	
-	/*
-	public ProcessSaleJFrame(Register register) {
-		super("POS System (학번 : 20141121 이름 : 최윤주)");
-		
-		this.register = register;
-		
-		// 화면 구성
-		buildGUI();
-		registerEventHandler();
-		loadProductOnJComboBox();
-		
-		// 화면 구성 후 pack, setVisible
-		this.pack();
-		this.setSize(650, 550);
-		this.setVisible(true);
-		
-		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-	}
-	*/
 	
 	public ProcessSaleJFrame(Register register, String dbFileName) {
 		super("POS System (학번 : 20141121 이름 : 최윤주)");
@@ -284,6 +275,11 @@ public class ProcessSaleJFrame extends JFrame implements PropertyListener{
 		
 		cp.add(scroll);
 		
+		// actionListener 등록 - 라디오버튼이 눌릴 때마다 상태변화를 알리기 위함
+		rb_taxMaster.addActionListener(this);
+		rb_goodAsGoldTaxPro.addActionListener(this);
+		rb_forCus.addActionListener(this);
+		rb_forStore.addActionListener(this);
 	}
 	
 	private void itemIDJComboBoxItemStateChanged(ItemEvent e) {
@@ -317,23 +313,14 @@ public class ProcessSaleJFrame extends JFrame implements PropertyListener{
 	private void registerEventHandler(PropertyListener pl) {
 		
 		b_makeNewSale.addActionListener(new ActionListener() {
-
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
+				action = MAKE_NEW_SALE;
 				
 				sale = register.makeNewSale();
 				sale.addPropertyListener(pl); // 기능8. 구매 물건이 추가시 현재 합계 갱신
 				
-				t_amount.setText("");
-				t_balance.setText("");
-				t_totalTax.setText("");
-				t_totalDiscount.setText("");
-				
-				cb_itemID.setEnabled(true);
-				t_quantity.setEnabled(true);
-				b_makeNewSale.setEnabled(false);
-				
-				ta_status.append("Status: Make New Sale 버튼이 눌려졌습니다.\n");
+				controlComponent(action);
 			}
 			
 		});
@@ -349,50 +336,49 @@ public class ProcessSaleJFrame extends JFrame implements PropertyListener{
 
 		@Override
 		public void actionPerformed(ActionEvent e) {
+			action = ENTER_ITEM;
 			
 			int q = 0;
 			
 			// 기능 1. Quantity 입력란 오류 처리
 			try {
 				q = Integer.parseInt(t_quantity.getText());
-				
+				flag = true;
 			} 
 			catch (NumberFormatException numberFromatException) {
 				JOptionPane.showMessageDialog(null, "please input only number");
 				t_quantity.setText("");
 				t_quantity.requestFocusInWindow();
+				flag = false; 
 			}
 			
-			// register
-			register.enterItem(new ItemID((String)cb_itemID.getSelectedItem()), q);
-			
-			// t_description에 상품 정보 띄움
-			String itemId = (String)cb_itemID.getSelectedItem();
-			String description = null;
-			
-			try{
-				myResultSet = myStatement.executeQuery("SELECT description FROM ProductDescriptions WHERE itemId = '"+itemId + "'");
+			if(flag) { // quantity 입력이 올바를 때만 enterItem이 진행
+				// register
+				register.enterItem(new ItemID((String)cb_itemID.getSelectedItem()), q);
 				
-				if(myResultSet.next()){
-					description = myResultSet.getString("description");
+				// itemId값으로 db에서 정보 얻어온 뒤 t_description에 상품 정보 띄움
+				String itemId = (String)cb_itemID.getSelectedItem();
+				String description = null;
+				
+				try{
+					myResultSet = myStatement.executeQuery("SELECT description FROM ProductDescriptions WHERE itemId = '"+itemId + "'");
+					
+					if(myResultSet.next()){
+						description = myResultSet.getString("description");
+					}
+					myResultSet.close();
 				}
-				myResultSet.close();
+				catch(SQLException exception){
+					exception.printStackTrace();
+				}
+				
+				t_description.setText(description);
+				
+				// 기능8. 구매 물건이 추가시 현재 합계 갱신 - observer
+				sale.setTotal(sale.getTotal());
+				
+				controlComponent(action);
 			}
-			catch(SQLException exception){
-				exception.printStackTrace();
-			}
-			
-			t_description.setText(description);
-			
-			t_quantity.setText("");
-			cb_itemID.setSelectedIndex(0);
-			
-			b_endSale.setEnabled(true);
-			
-			// 기능8. 구매 물건이 추가시 현재 합계 갱신 - observer
-			sale.setTotal(sale.getTotal());
-			
-			ta_status.append("Status: Enter Item 버튼이 눌려졌습니다.\n");
 		}
 	};
 	
@@ -400,19 +386,12 @@ public class ProcessSaleJFrame extends JFrame implements PropertyListener{
 
 		@Override
 		public void actionPerformed(ActionEvent e) {
+			action = END_SALE;
 			
 			// register
 			register.endSale();
 			
-			cb_itemID.setEnabled(false);
-			t_quantity.setEnabled(false);
-			b_enterItem.setEnabled(false);
-			b_endSale.setEnabled(false);
-			rb_taxMaster.setEnabled(true);
-			rb_goodAsGoldTaxPro.setEnabled(true);
-			b_calculateTax.setEnabled(true);
-			
-			ta_status.append("Status: End Sale 버튼이 눌려졌습니다.\n");
+			controlComponent(action);
 		}
 	};
 	
@@ -420,34 +399,34 @@ public class ProcessSaleJFrame extends JFrame implements PropertyListener{
 
 		@Override
 		public void actionPerformed(ActionEvent e) {
+			action = CALCULATE_TAX;
 
 			// 라디오 버튼이 어떤 것이 선택되었느냐에 따라 tax률이 다르게 매겨짐
 			if(rb_taxMaster.isSelected()){
 				// TaxMaster
 				System.setProperty("taxcalculator.class.name", "pos.domainlayer.TaxMasterAdapter");
-				ta_status.append("tax률 10%가 적용되었습니다\n");
+				ta_status.append("TaxMaster : 세금률 10%가 적용되었습니다\n");
+				flag = true;
 			}
 			else if(rb_goodAsGoldTaxPro.isSelected()){
 				// GoodAsGoldTaxPro
 				System.setProperty("taxcalculator.class.name", "pos.domainlayer.GoodAsGoldTaxProAdapter");
-				ta_status.append("tax률 20%가 적용되었습니다\n");
+				ta_status.append("GoodAsGoldTaxPro : 세금률 20%가 적용되었습니다\n");
+				flag = true;
 			}
 			else { // 아무것도 선택하지 않았을 때
-				
+				JOptionPane.showMessageDialog(null, "please select anything");
+				rb_taxMaster.doClick(); // 임의로 첫번째 라디오버튼 클릭되게 함
+				flag = false;
 			}
 			
-			// register
-			register.calculateTax();
-			t_totalTax.setText(sale.getTotalWithTax().toString());
-
-			rb_taxMaster.setEnabled(false);
-			rb_goodAsGoldTaxPro.setEnabled(false);
-			b_calculateTax.setEnabled(false);
-			rb_forCus.setEnabled(true);
-			rb_forStore.setEnabled(true);
-			b_applyDiscount.setEnabled(true);
-			
-			ta_status.append("Status: Calculate Tax 버튼이 눌려졌습니다.\n");
+			if(flag){
+				// register
+				register.calculateTax();
+				t_totalTax.setText(sale.getTotalWithTax().toString());
+	
+				controlComponent(action);
+			}
 		}
 		
 	};
@@ -456,33 +435,31 @@ public class ProcessSaleJFrame extends JFrame implements PropertyListener{
 
 		@Override
 		public void actionPerformed(ActionEvent e) {
+			action = APPLY_DISCOUNT;
 			
 			//ISalePricingStrategy pricingStrategy = null;
 			
 			if(rb_forCus.isSelected()){
 				// BestForCustomer
-				//sale.compositePricingStrategy = new CompositeBestForCustomerPricingStrategy();
 				register.applyDiscount(new CompositeBestForCustomerPricingStrategy());
+				flag = true;
 			}
 			else if(rb_forStore.isSelected()){
 				// BestForStore
-				//sale.pricingStrategy = new CompositeBestForStorePricingStrategy();
 				register.applyDiscount(new CompositeBestForStorePricingStrategy());
+				flag = true;
 			}
 			else { // 아무것도 선택하지 않았을 때
-				
+				JOptionPane.showMessageDialog(null, "please select anything");
+				rb_forCus.doClick(); // 임의로 첫번째 라디오버튼 클릭되게 함
+				flag = false;
 			}
 			
-			//t_totalDiscount.setText(sale.getCompositePricingStrategy().getTotal(sale).toString());
-			t_totalDiscount.setText(sale.getAfterDiscountTotal().toString());
-			
-			rb_forCus.setEnabled(false);
-			rb_forStore.setEnabled(false);
-			b_applyDiscount.setEnabled(false);
-			t_amount.setEnabled(true);
-			b_makePayment.setEnabled(true);
-			
-			ta_status.append("Status: Apply Discount 버튼이 눌려졌습니다.\n");
+			if(flag){
+				t_totalDiscount.setText(sale.getAfterDiscountTotal().toString());
+				
+				controlComponent(action);
+			}
 		}
 		
 	};
@@ -491,26 +468,28 @@ public class ProcessSaleJFrame extends JFrame implements PropertyListener{
 
 		@Override
 		public void actionPerformed(ActionEvent e) {
+			action = MAKE_PAYMENT;
+			
 			int amount = 0;
 			
 			// 기능 1. Quantity 입력란 오류 처리
 			try {
 				amount = Integer.parseInt(t_amount.getText());
+				flag = true;
 			} 
 			catch (NumberFormatException numberFromatException) {
 				JOptionPane.showMessageDialog(null, "please input only number");
 				t_amount.setText("");
 				t_amount.requestFocusInWindow();
+				flag = false;
 			}
 			
-			sale.makePayment(new Money(amount));
-			t_balance.setText(sale.getBalance().toString());
+			if(flag) {
+				sale.makePayment(new Money(amount));
+				t_balance.setText(sale.getBalance().toString());
 			
-			t_amount.setEnabled(false);
-			b_makePayment.setEnabled(false);
-			b_makeNewSale.setEnabled(true);
-			
-			ta_status.append("Status: Make Payment 버튼이 눌려졌습니다.\n");
+				controlComponent(action);
+			}
 		}
 	};
 	
@@ -529,5 +508,95 @@ public class ProcessSaleJFrame extends JFrame implements PropertyListener{
 		// TODO Auto-generated method stub
 		if (name.equals("sale.total"))
 			t_currentTotal.setText(value.toString());
+	}
+	
+	public void controlComponent(int action) {
+		switch(action) {
+		case MAKE_NEW_SALE:
+			t_quantity.setText("");
+			t_description.setText("");
+			t_amount.setText("");
+			t_balance.setText("");
+			t_currentTotal.setText("");
+			t_totalTax.setText("");
+			t_totalDiscount.setText("");
+			cb_itemID.setEnabled(true);
+			t_quantity.setEnabled(true);
+			//b_makeNewSale.setEnabled(false);
+			b_enterItem.setEnabled(false);
+			b_endSale.setEnabled(false);
+			rb_taxMaster.setSelected(false); // 선택된 것 취소하는 메소드?
+			rb_taxMaster.setEnabled(false);
+			rb_goodAsGoldTaxPro.setSelected(false);
+			rb_goodAsGoldTaxPro.setEnabled(false);
+			b_calculateTax.setEnabled(false);
+			rb_forCus.setSelected(false);
+			rb_forCus.setEnabled(false);
+			rb_forStore.setSelected(false);
+			rb_forStore.setEnabled(false);
+			b_applyDiscount.setEnabled(false);
+			t_amount.setEnabled(false);
+			b_makePayment.setEnabled(false);
+			ta_status.append("Status: Make New Sale 버튼이 눌려졌습니다.\n");
+			ta_status.append("Item ID를 선택 후 수량을 입력해주세요\n");
+			break;
+		case ENTER_ITEM:
+			t_quantity.setText("");
+			cb_itemID.setSelectedIndex(0);
+			b_endSale.setEnabled(true);
+			ta_status.append("Status: Enter Item 버튼이 눌려졌습니다.\n");
+			break;
+		case END_SALE:
+			cb_itemID.setEnabled(false);
+			t_quantity.setEnabled(false);
+			b_enterItem.setEnabled(false);
+			b_endSale.setEnabled(false);
+			rb_taxMaster.setEnabled(true);
+			rb_goodAsGoldTaxPro.setEnabled(true);
+			b_calculateTax.setEnabled(true);
+			ta_status.append("Status: End Sale 버튼이 눌려졌습니다.\n");
+			ta_status.append("사용하고자 하는 세금 방법을 선택해주세요\n");
+			break;
+		case CALCULATE_TAX:
+			rb_taxMaster.setEnabled(false);
+			rb_goodAsGoldTaxPro.setEnabled(false);
+			b_calculateTax.setEnabled(false);
+			rb_forCus.setEnabled(true);
+			rb_forStore.setEnabled(true);
+			b_applyDiscount.setEnabled(true);
+			ta_status.append("Status: Calculate Tax 버튼이 눌려졌습니다.\n");
+			ta_status.append("사용하고자 하는 가격 정책을 선택해주세요\n");
+			break;
+		case APPLY_DISCOUNT:
+			rb_forCus.setEnabled(false);
+			rb_forStore.setEnabled(false);
+			b_applyDiscount.setEnabled(false);
+			t_amount.setEnabled(true);
+			b_makePayment.setEnabled(true);
+			ta_status.append("Status: Apply Discount 버튼이 눌려졌습니다.\n");
+			ta_status.append("지불할 금액을 입력해주세요\n");
+			break;
+		case MAKE_PAYMENT:
+			t_amount.setEnabled(false);
+			b_makePayment.setEnabled(false);
+			b_makeNewSale.setEnabled(true);
+			ta_status.append("Status: Make Payment 버튼이 눌려졌습니다.\n");
+			ta_status.append("잔돈을 확인해주세요\n");
+			break;
+		default:
+		}
+	}
+
+	@Override
+	public void actionPerformed(ActionEvent e) {
+		// TODO Auto-generated method stub
+		if(e.getSource() == rb_taxMaster)
+			ta_status.append("TaxMaster : 총 금액에 세율 10% 부과\n");
+		else if(e.getSource() == rb_goodAsGoldTaxPro)
+			ta_status.append("GoodAsGoldTaxPro : 총 금액에 세율 20% 부과\n");
+		else if(e.getSource() == rb_forCus)
+			ta_status.append("BestForCustomer : 고객에게 유리한 할인률 적용\n");
+		else if(e.getSource() == rb_forStore)
+			ta_status.append("BestForStore : 상점에 유리한 할인률 적용\n");
 	}
 }

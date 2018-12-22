@@ -16,12 +16,10 @@ public class ServicesFactory {
 	}
 	
 	public ITaxCalculatorAdapter getTaxCalculatorAdapter() throws InstantiationException, IllegalAccessException, ClassNotFoundException {
-		if(taxCalculatorAdapter == null) {
-			// 합당한 클래스를 찾기 위한 반사적 접근 방법이나 데이터 주도 접근 방법:
-			// 외부 프로퍼티(property)에서 데이터를 읽어온다
-			String className = System.getProperty("taxcalculator.class.name");
-			taxCalculatorAdapter = (ITaxCalculatorAdapter) Class.forName(className).newInstance();
-		}
+		// 합당한 클래스를 찾기 위한 반사적 접근 방법이나 데이터 주도 접근 방법:
+		// 외부 프로퍼티(property)에서 데이터를 읽어온다
+		String className = System.getProperty("taxcalculator.class.name");
+		taxCalculatorAdapter = (ITaxCalculatorAdapter) Class.forName(className).newInstance();
 		return taxCalculatorAdapter;
 	}
 }
